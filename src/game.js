@@ -9,7 +9,7 @@ var WRGame = function() {
 	var ACCEL = 2000;
 	var MAX_SPEED_ACCEL = 70;
 	var START_MAX_SPEED = 1500;
-	var FINAL_MAX_SPEED = 4000;
+	var FINAL_MAX_SPEED = 1500;
 	var SIDE_ACCEL = 500;
 	var MAX_SIDE_SPEED = 4000;
 	var TREE_COLS = [0x466310,0x355B4B,0x449469];
@@ -17,6 +17,13 @@ var WRGame = function() {
 	var FLOOR_RES = 20;
 	var FLOOR_YPOS = -300;
 	var FLOOR_THICKNESS = 300;
+
+	// 添加跳跃相关变量
+	var JUMP_FORCE = 1400;  // 跳跃力度
+	var GRAVITY = -1600;    // 重力
+	var isJumping = false;  // 是否在跳跃
+	var verticalVelocity = 0; // 垂直速度
+	var playerHeight = 0;  // 玩家高度
 
 	var stepCount = 0;
 	var moveSpeed = 0; //z distance per second
@@ -44,12 +51,6 @@ var WRGame = function() {
 	var trunkGeom;
 	
 	var snoise = new ImprovedNoise();
-
-	var JUMP_FORCE = 2800;  // 跳跃力度
-	var GRAVITY = -3000;    // 重力改为负值，使跳跃方向向上
-	var isJumping = false; // 是否在跳跃
-	var verticalVelocity = 0; // 垂直速度
-	var playerHeight = 0;  // 玩家高度
 
 	function init(){
 
@@ -214,7 +215,7 @@ var WRGame = function() {
 		tree.add( trunk );
 		trunk.position.y =  -700;
 		tree.scale.x = tree.scale.z = tree.scale.y = scale; 
-		tree.myheight = 1400 * tree.scale.y;
+		tree.myheight = 1400 * tree.scale.y;  // 恢复树的高度为1400
 		//put tree on floor
 		tree.position.y =  tree.myheight/2 - 300;
 		return tree;
@@ -349,13 +350,13 @@ var WRGame = function() {
 		//SIMPLE HIT DETECT
 
 		if (WRConfig.hitDetect){
+
 			var p;
 			var dist;
 
 			var camPos = WRMain.getCamera().position.clone();
 			camPos.z -= 200;
 
-			// 检查与礼物的碰撞
 			p = presentGroup.position.clone();
 			p.add(moverGroup.position);
 			dist = p.distanceTo(camPos);
@@ -365,28 +366,33 @@ var WRGame = function() {
 				WRMain.onScorePoint();
 			}
 
-			// 只检查主区域的树木碰撞
-			for(var i = 0; i < TREE_COUNT; i++) {
-				if (!trees[i].visible) continue;  // 跳过不可见的树木
-				
+
+			for(  i = 0; i < TREE_COUNT; i++) {
+
 				p = trees[i].position.clone();
+				// 不再忽略树的高度
 				p.add(moverGroup.position);
 
-				// 计算玩家与树木的水平距离
-				var horizontalDist = Math.sqrt(
-					Math.pow(p.x - camPos.x, 2) + 
-					Math.pow(p.z - camPos.z, 2)
-				);
+				//can only hit trees if they are in front of you
+				if (p.z < camPos.z && p.z > camPos.z - 200){
 
-				// 计算玩家与树木的垂直距离
-				var verticalDist = Math.abs(p.y - camPos.y);
+					// 计算水平距离
+					var horizontalDist = Math.sqrt(
+						Math.pow(p.x - camPos.x, 2) + 
+						Math.pow(p.z - camPos.z, 2)
+					);
 
-				// 检查是否在树木的碰撞范围内
-				if (horizontalDist < 200 && verticalDist < 400 && !trees[i].collided) {
-					// 如果玩家在树木的碰撞范围内，游戏结束
-					trees[i].collided = true;
-					onGameEnd();
-					break;  // 找到碰撞就立即结束游戏
+					// 计算垂直距离
+					var verticalDist = Math.abs(p.y - camPos.y);
+
+					// 检查是否在树木的碰撞范围内 
+					if (horizontalDist < 200 && 
+						verticalDist < trees[i].myheight/2 &&  // 使用树的实际高度
+						!trees[i].collided) {
+						//GAME OVER
+						trees[i].collided = true;
+						onGameEnd();
+					}		
 				}
 			}
 		}
@@ -419,23 +425,22 @@ var WRGame = function() {
 		//set tilt to 0
 		slideSpeed = 0;
 		moverGroup.rotation.z = 0;
+		
+		// 重置跳跃状态
+		isJumping = false;
+		verticalVelocity = 0;
+		moverGroup.position.y = playerHeight;
+
 		//kill trees that are too close at the start
-		for(  i = 0; i < TREE_COUNT; i++) {
+		for(var i = 0; i < TREE_COUNT; i++) {
 			p = trees[i].position.clone();
 			p.add(moverGroup.position);
 
-			if (p.z < camPos.z && p.z > camPos.z - WRConfig.FLOOR_DEPTH/2){
+			if (p.z < camPos.z && p.z > camPos.z - WRConfig.FLOOR_DEPTH/2) {
 				trees[i].collided = true;
 				trees[i].visible = false;
 			}
 		}
-
-		// 重置跳跃相关变量
-		isJumping = false;
-		verticalVelocity = 0;
-		moverGroup.position.y = playerHeight;
-		moverGroup.rotation.x = 0;
-
 	}
 
 	function startRun(){
@@ -458,7 +463,7 @@ var WRGame = function() {
 	
 	}
 
-	// 添加跳跃控制函数
+	// 添加跳跃处理函数
 	function handleJump() {
 		if (!isJumping && acceptInput) {
 			isJumping = true;
@@ -470,7 +475,7 @@ var WRGame = function() {
 	// 添加重力更新函数
 	function updateGravity(delta) {
 		if (isJumping) {
-			verticalVelocity += GRAVITY * delta;  // 改为加号，因为GRAVITY已经是负值
+			verticalVelocity += GRAVITY * delta;
 			moverGroup.position.y -= verticalVelocity * delta;
 			
 			// 检查是否落地
@@ -497,4 +502,3 @@ var WRGame = function() {
 
 
 }();
-
