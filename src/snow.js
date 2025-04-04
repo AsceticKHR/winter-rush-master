@@ -42,14 +42,14 @@ var WRSnow = function() {
 		}
 
 		var snowMaterial = new THREE.PointCloudMaterial( { 
-			size: 50, 
+			size: 30,
 			sizeAttenuation: true, 
 			map: snowSprite, 
-			transparent: true ,
+			transparent: true,
 			blending: THREE.AdditiveBlending,
 			depthTest: true,
-			opacity:0.7,
-			depthWrite:false
+			opacity: 0.5,
+			depthWrite: false
 		} );
 
 		var particles = new THREE.PointCloud( snowGeometry, snowMaterial );

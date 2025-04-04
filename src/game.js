@@ -7,9 +7,9 @@
 var WRGame = function() {
 
 	var ACCEL = 2000;
-	var MAX_SPEED_ACCEL = 70;
-	var START_MAX_SPEED = 1500;
-	var FINAL_MAX_SPEED = 1500;
+	var MAX_SPEED_ACCEL = 100;
+	var START_MAX_SPEED = 1000;
+	var FINAL_MAX_SPEED = 4000;
 	var SIDE_ACCEL = 500;
 	var MAX_SIDE_SPEED = 4000;
 	var TREE_COLS = [0x466310,0x355B4B,0x449469];
@@ -495,7 +495,7 @@ var WRGame = function() {
 		setLeftDown: function (b){leftDown = b;},
 		getPlaying: function (){return playing;},
 		getMoverGroup:function (){return moverGroup;},
-		getSpeed: function() {return moveSpeed/FINAL_MAX_SPEED;},
+		getSpeed: function() {return moveSpeed/maxSpeed;},
 		resetField:resetField,
 		getAcceptInput:function (){return acceptInput;},
 	};
