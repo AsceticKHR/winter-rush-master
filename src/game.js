@@ -585,7 +585,7 @@ var WRGame = function() {
 		setLeftDown: function (b){leftDown = b;},
 		getPlaying: function (){return playing;},
 		getMoverGroup:function (){return moverGroup;},
-		getSpeed: function() {return moveSpeed/FINAL_MAX_SPEED;},
+		getSpeed: function() {return moveSpeed/maxSpeed;},
 		resetField:resetField,
 		getAcceptInput:function (){return acceptInput;},
 	};

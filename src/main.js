@@ -36,6 +36,7 @@ var WRMain = function() {
 
 	var hiScore = 0;
 	var score = 0;
+	var distance = 0;
 
 	var sndPickup;
 	var sndCollide;
@@ -50,7 +51,48 @@ var WRMain = function() {
 
 	var splashMode = 0; //0->2 indicating which splash page is showing
 	var isFirstGame = true;
-	
+
+	// 初始化里程显示
+	$("#container").append('<div id="distance-text">0m</div>');
+	$("#distance-text").css({
+		'position': 'absolute',
+		'top': '120px',
+		'color': '#FFFFFF',
+		'width': '100%',
+		'text-align': 'center',
+		'margin': '0 auto',
+		'left': '0',
+		'right': '0',
+		'opacity': '0',
+		'font-size': '10vmin',
+		'letter-spacing': '1px',
+		'display': 'flex',
+		'justify-content': 'center',
+		'align-items': 'center'
+	});
+
+	// // 调整初始界面样式
+	// $("#splash").css({
+	// 	'position': 'absolute',
+	// 	'top': '50%',
+	// 	'left': '50%',
+	// 	'transform': 'translate(-50%, -50%)',
+	// 	'text-align': 'center',
+	// 	'display': 'flex',
+	// 	'flex-direction': 'column',
+	// 	'justify-content': 'center',
+	// 	'align-items': 'center'
+	// });
+
+	// $("#info").css({
+	// 	'position': 'absolute',
+	// 	'bottom': '20px',
+	// 	'left': '50%',
+	// 	'transform': 'translateX(-50%)',
+	// 	'text-align': 'center',
+	// 	'width': '100%'
+	// });
+
 	function init() {
 
 		WRConfig.showDebug = window.location.href.indexOf("?dev")  > -1;
@@ -123,10 +165,15 @@ var WRMain = function() {
 		composer.addPass( superPass );
 		superPass.renderToScreen = true;
 
+		// 初始化时钟
+		clock = new THREE.Clock();
+
+		// 初始化游戏状态
+		score = 0;
+		distance = 0;
 		WRGame.init();
 
-		resize();
-
+		// 初始化动画循环
 		animate();
 
 		//fade in
@@ -228,29 +275,84 @@ var WRMain = function() {
 
 		//display score
 		TweenMax.to($('#score-text') , 0.1, {autoAlpha: 0});
+		TweenMax.to($('#distance-text') , 0.1, {autoAlpha: 0});
 		TweenMax.fromTo($('#splash') , 0.5, {scale: 0.6,autoAlpha: 0},{scale: 1,autoAlpha: 1,ease:Expo.easeOut});
 		TweenMax.fromTo($('#info') , 0.5, {autoAlpha: 0},{autoAlpha: 1});
 		TweenMax.fromTo($('#music-toggle') , 0.5, {autoAlpha: 0},{autoAlpha: 1});
+
+		// 设置splash容器的样式
+		$('#splash').css({
+			'position': 'absolute',
+			'top': '50%',
+			'left': '50%',
+			'transform': 'translate(-50%, -50%)',
+			'width': '400px',
+			'height': '400px',
+			'background-size': 'contain',
+			'background-repeat': 'no-repeat',
+			'background-position': 'center'
+		});
 
 		if (score > hiScore){
 			splashMode = 1;
 			hiScore = score;
 			$('#splash').css('background-image', 'url(res/img/xmas-best.png)');
-			$('#prompt-big').text("SCORE: " + score);
+			$('#prompt-big').text("DISTANCE: " + Math.floor(distance) + "m\nSCORE: " + score);
 			$('#prompt-small').css('display','none');
-			$('#prompt-big').css("margin-top" , "10%");
+			$('#prompt-big').css({
+				'position': 'absolute',
+				'top': '80%',
+				'left': '50%',
+				'transform': 'translate(-50%, -50%)',
+				'text-align': 'center',
+				'width': '300px',
+				'height': '150px',
+				'z-index': '1',
+				'white-space': 'pre-line',
+				'font-size': '20px',
+				'margin': '0',
+				'padding': '0',
+				'line-height': '2.5'
+			});
 
 		}else{
 			splashMode = 2;
 			$('#splash').css('background-image', 'url(res/img/xmas-wipeout.png)');
-			$('#prompt-big').text("SCORE: " + score);
+			$('#prompt-big').text("DISTANCE: " + Math.floor(distance) + "m\tSCORE: " + score + "\n");
 			$('#prompt-small').text("BEST SCORE: " + hiScore);
 			$('#prompt-small').css('display','block');
-			$('#prompt-big').css("margin-top" , "8%");
-			$('#prompt-small').css("margin-top" , "2%");
+			$('#prompt-big').css({
+				'position': 'absolute',
+				'top': '80%',
+				'left': '50%',
+				'transform': 'translate(-50%, -50%)',
+				'text-align': 'center',
+				'width': '300px',
+				'height': '150px',
+				'z-index': '1',
+				'white-space': 'pre-line',
+				'font-size': '20px',
+				'margin': '0',
+				'padding': '0',
+				'line-height': '2.5'
+			});
+			$('#prompt-small').css({
+				'position': 'absolute',
+				'top': '99%',
+				'left': '50%',
+				'transform': 'translate(-50%, -50%)',
+				'text-align': 'center',
+				'width': '300px',
+				'height': '50px',
+				'z-index': '1',
+				'font-size': '18px',
+				'margin': '0',
+				'padding': '0',
+				'line-height': '1.5'
+			});
 		 }
 
-		resize();
+		// resize();
 		hueTime =0;
 
 	}
@@ -260,8 +362,11 @@ var WRMain = function() {
 		TweenMax.to($('#info') , 0.3, {autoAlpha: 0});
 		TweenMax.to($('#music-toggle') , 0.3, {autoAlpha: 0});
 		TweenMax.to($('#score-text') , 0.3, {autoAlpha: 1,delay:0.3});
+		TweenMax.to($('#distance-text') , 0.3, {autoAlpha: 1,delay:0.3});
 		score = 0;
+		distance = 0;
 		$("#score-text").text(score);
+		$("#distance-text").text("0m");
 
 		if (isFirstGame && WRConfig.playMusic ) sndMusic.play();						
 
@@ -270,30 +375,33 @@ var WRMain = function() {
 	}
 
 	function animate(){
-
 		requestAnimationFrame( animate );
+		
+		// 更新游戏状态
 		WRGame.animate();
+		
+		// 更新调试信息
 		if (WRConfig.showDebug){
 			stats.update();
 		}
 
-		//faster = more hue amount and faster shifts
-		var hueAmount;
-		if (WRGame.getSpeed() < 0.5){
-			hueAmount = 0;
-		}else{
-			hueAmount = (WRGame.getSpeed()- 0.5) * 2;
+		// 更新里程
+		if (WRGame.getPlaying()) {
+			var delta = clock.getDelta();
+			distance += WRGame.getSpeed() * delta * 10;
+			$("#distance-text").text(Math.floor(distance) + "m");
 		}
-		superPass.uniforms.hueAmount.value =  hueAmount;
+
+		// 更新视觉效果
+		var hueAmount = WRGame.getSpeed() < 0.5 ? 0 : (WRGame.getSpeed() - 0.5) * 2;
+		superPass.uniforms.hueAmount.value = hueAmount;
 
 		hueTime += WRGame.getSpeed() * WRGame.getSpeed() * 0.05;
-		var hue = hueTime % 2 - 1; //put in range -1 to 1
-		superPass.uniforms.hue.value =  hue;
-		superPass.uniforms.brightness.value =  fxParams.brightness;
-		composer.render( 0.1 );
+		superPass.uniforms.hue.value = hueTime % 2 - 1;
+		superPass.uniforms.brightness.value = fxParams.brightness;
 
-		//WRMain.trace( WRGame.getSpeed());
-
+		// 渲染场景
+		composer.render();
 	}
 
 	//INPUT HANDLERS
