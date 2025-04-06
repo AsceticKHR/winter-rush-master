@@ -6,21 +6,21 @@
 
 var WRGame = function() {
 
-	var ACCEL = 2000;
-	var MAX_SPEED_ACCEL = 700;
-	var START_MAX_SPEED = 1000;
-	var FINAL_MAX_SPEED = 1500;
+	var ACCEL = 100;
+	var MAX_SPEED_ACCEL = 50;
+	var START_MAX_SPEED = 1800;
+	var FINAL_MAX_SPEED = 2500;
 	var SIDE_ACCEL = 500;
 	var MAX_SIDE_SPEED = 4000;
 	var TREE_COLS = [0x466310,0x355B4B,0x449469];
-	var TREE_COUNT = 10;
+	var TREE_COUNT = 6;
 	var ROCK_COUNT = 5;
 	var FLOOR_RES = 20;
 	var FLOOR_YPOS = -300;
 	var FLOOR_THICKNESS = 300;
 
 	// 添加跳跃相关变量
-	var JUMP_FORCE = 1400;  // 跳跃力度
+	var JUMP_FORCE = 1700;  // 跳跃力度
 	var GRAVITY = -1600;    // 重力
 	var isJumping = false;  // 是否在跳跃
 	var verticalVelocity = 0; // 垂直速度
@@ -107,10 +107,13 @@ var WRGame = function() {
 
 		for(  i= 0; i < TREE_COLS.length; i++) {
 
-			var treeMaterial = new THREE.MeshLambertMaterial({
-				color: TREE_COLS[i],				
-				shading: THREE.FlatShading, 
-				depthTest: true,						
+			var treeMaterial = new THREE.MeshPhongMaterial({
+				color: TREE_COLS[i],     // 基础颜色保持不变
+				specular: 0x222222,      // 降低反光强度
+				shininess: 10,           // 进一步降低光泽度
+				emissive: 0x000000,      // 无自发光
+				flatShading: true,       // 保持平面着色效果
+				side: THREE.DoubleSide    // 双面渲染
 			});
 			treeMaterials.push(treeMaterial);
 		}
@@ -128,37 +131,101 @@ var WRGame = function() {
 		treeGeom = new THREE.CylinderGeometry(0, 250, 1200, 8, 1, false);
 
 		// 创建石头几何体和材质
-		rockGeom = new THREE.DodecahedronGeometry(200, 0);  // 增大石头的基础大小
-		rockMaterial = new THREE.MeshLambertMaterial({
-			color: 0x808080,  // 灰色
-			shading: THREE.FlatShading,
-			depthTest: true
+		rockGeom = new THREE.DodecahedronGeometry(200, 1);  // 增加细节级别
+
+		// 加载纹理
+		var textureLoader = new THREE.TextureLoader();
+		var rockBaseColor = textureLoader.load('models/rock/textures/Rock_01_A_baseColor.jpeg');
+		var rockNormal = textureLoader.load('models/rock/textures/Rock_01_A_normal.png');
+		var rockMetallicRoughness = textureLoader.load('models/rock/textures/Rock_01_A_metallicRoughness.png');
+
+		rockMaterial = new THREE.MeshStandardMaterial({
+			map: rockBaseColor,  // 基础颜色贴图
+			normalMap: rockNormal,  // 法线贴图
+			metalnessMap: rockMetallicRoughness,  // 金属度贴图
+			roughnessMap: rockMetallicRoughness,  // 粗糙度贴图
+			metalness: 0.5,  // 金属度
+			roughness: 0.8,  // 粗糙度
+			side: THREE.DoubleSide  // 双面渲染
 		});
 
-		var tree;
-		for( i = 0; i < TREE_COUNT; i++) {
-
+		// 生成树
+		var minDistance = 300; // 最小安全距离
+		for(i = 0; i < TREE_COUNT; i++) {
 			var scl = ATUtil.randomRange(0.8,1.3);
 			var matID = i%TREE_COLS.length;
-			tree = makeTree(scl,matID);
-			moverGroup.add( tree );
-			tree.posi = Math.random();
-			tree.posj = Math.random();
-			tree.position.x = tree.posj * WRConfig.FLOOR_WIDTH - WRConfig.FLOOR_WIDTH/2;
-			tree.position.z = - (tree.posi * WRConfig.FLOOR_DEPTH) + WRConfig.FLOOR_DEPTH/2;
+			var tree = makeTree(scl,matID);
+			moverGroup.add(tree);
+			
+			// 尝试生成新位置，直到找到合适的位置
+			var attempts = 0;
+			var isPositionValid = false;
+			while(!isPositionValid && attempts < 10) {
+				tree.posi = Math.random();
+				tree.posj = Math.random();
+				tree.position.x = tree.posj * WRConfig.FLOOR_WIDTH - WRConfig.FLOOR_WIDTH/2;
+				tree.position.z = - (tree.posi * WRConfig.FLOOR_DEPTH) + WRConfig.FLOOR_DEPTH/2;
+				
+				// 检查与现有树的位置是否太近
+				isPositionValid = true;
+				for(var j = 0; j < trees.length; j++) {
+					var dx = trees[j].position.x - tree.position.x;
+					var dz = trees[j].position.z - tree.position.z;
+					var distance = Math.sqrt(dx*dx + dz*dz);
+					if(distance < minDistance) {
+						isPositionValid = false;
+						break;
+					}
+				}
+				attempts++;
+			}
+			
 			tree.rotation.y = Math.random()*Math.PI*2;
 			trees.push(tree);
 			tree.collided = false;
 		}
 
-		// 创建石头
+		// 生成石头
 		for(i = 0; i < ROCK_COUNT; i++) {
 			var rock = makeRock(0.8 + Math.random() * 0.8);
 			moverGroup.add(rock);
-			rock.posi = Math.random() * 0.7 + 0.3;  // 修改随机范围，避免在近处生成
-			rock.posj = Math.random();
-			rock.position.x = rock.posj * WRConfig.FLOOR_WIDTH - WRConfig.FLOOR_WIDTH/2;
-			rock.position.z = - (rock.posi * WRConfig.FLOOR_DEPTH) + WRConfig.FLOOR_DEPTH/2;
+			
+			// 尝试生成新位置，直到找到合适的位置
+			var attempts = 0;
+			var isPositionValid = false;
+			while(!isPositionValid && attempts < 10) {
+				rock.posi = Math.random() * 0.7 + 0.3;  // 修改随机范围，避免在近处生成
+				rock.posj = Math.random();
+				rock.position.x = rock.posj * WRConfig.FLOOR_WIDTH - WRConfig.FLOOR_WIDTH/2;
+				rock.position.z = - (rock.posi * WRConfig.FLOOR_DEPTH) + WRConfig.FLOOR_DEPTH/2;
+				
+				// 检查与现有树和石头的位置是否太近
+				isPositionValid = true;
+				for(var j = 0; j < trees.length; j++) {
+					var dx = trees[j].position.x - rock.position.x;
+					var dz = trees[j].position.z - rock.position.z;
+					var distance = Math.sqrt(dx*dx + dz*dz);
+					if(distance < minDistance) {
+						isPositionValid = false;
+						break;
+					}
+				}
+				
+				if(isPositionValid) {
+					for(var j = 0; j < rocks.length; j++) {
+						var dx = rocks[j].position.x - rock.position.x;
+						var dz = rocks[j].position.z - rock.position.z;
+						var distance = Math.sqrt(dx*dx + dz*dz);
+						if(distance < minDistance) {
+							isPositionValid = false;
+							break;
+						}
+					}
+				}
+				
+				attempts++;
+			}
+			
 			rock.rotation.x = Math.random() * Math.PI;
 			rock.rotation.y = Math.random() * Math.PI * 2;
 			rock.rotation.z = Math.random() * Math.PI;
@@ -251,9 +318,24 @@ var WRGame = function() {
 	// 添加生成石头的函数
 	function makeRock(scale) {
 		var rock = new THREE.Mesh(rockGeom, rockMaterial);
+		// 添加随机变形
+		rock.geometry.vertices.forEach(function(vertex) {
+			vertex.x += (Math.random() - 0.5) * 50;
+			vertex.y += (Math.random() - 0.5) * 50;
+			vertex.z += (Math.random() - 0.5) * 50;
+		});
+		rock.geometry.verticesNeedUpdate = true;
+		rock.geometry.computeVertexNormals();
+		
 		rock.scale.x = rock.scale.z = rock.scale.y = scale;
 		rock.myheight = 200 * rock.scale.y;  // 设置石头的高度
-		rock.position.y = rock.myheight/2 - 200;  // 降低石头的位置
+		rock.position.y = rock.myheight/2 - 250;  // 进一步降低石头的位置
+		
+		// 添加随机旋转
+		rock.rotation.x = Math.random() * Math.PI;
+		rock.rotation.y = Math.random() * Math.PI * 2;
+		rock.rotation.z = Math.random() * Math.PI;
+		
 		return rock;
 	}
 
@@ -319,11 +401,46 @@ var WRGame = function() {
 		if (presentGroup.position.z + moverGroup.position.z > WRConfig.FLOOR_DEPTH/2){
 			presentGroup.collided = false;
 			presentGroup.position.z	-= WRConfig.FLOOR_DEPTH;
-			//re-randomize x pos
-			presentGroup.posj = Math.random();
-			var xRange = WRConfig.FLOOR_WIDTH/2 * 0.7;
-			presentGroup.position.x = ATUtil.randomRange(-xRange,xRange);
-		
+			
+			// 检查新位置是否与障碍物太近
+			var isTooClose = true;
+			var attempts = 0;
+			var minDistance = 400;  // 最小安全距离
+			
+			while(isTooClose && attempts < 10) {
+				// 重新随机位置
+				presentGroup.posj = Math.random();
+				var xRange = WRConfig.FLOOR_WIDTH/2 * 0.7;
+				presentGroup.position.x = ATUtil.randomRange(-xRange,xRange);
+				
+				// 检查与所有障碍物的距离
+				isTooClose = false;
+				for(var i = 0; i < TREE_COUNT; i++) {
+					var tree = trees[i];
+					var dx = tree.position.x - presentGroup.position.x;
+					var dz = tree.position.z - presentGroup.position.z;
+					var distance = Math.sqrt(dx*dx + dz*dz);
+					if(distance < minDistance) {
+						isTooClose = true;
+						break;
+					}
+				}
+				
+				if(!isTooClose) {
+					for(var i = 0; i < rocks.length; i++) {
+						var rock = rocks[i];
+						var dx = rock.position.x - presentGroup.position.x;
+						var dz = rock.position.z - presentGroup.position.z;
+						var distance = Math.sqrt(dx*dx + dz*dz);
+						if(distance < minDistance) {
+							isTooClose = true;
+							break;
+						}
+					}
+				}
+				
+				attempts++;
+			}
 		}		
 
 	}
@@ -363,7 +480,7 @@ var WRGame = function() {
 
 			// 在跳跃时侧滑速度减半
 			if (isJumping) {
-				slideSpeed *= 0.7;
+				slideSpeed *= 0.8;
 			}
 
 			//bounce off edges of rails
@@ -430,7 +547,7 @@ var WRGame = function() {
 				p.add(moverGroup.position);
 
 				//can only hit trees if they are in front of you
-				if (p.z < camPos.z && p.z > camPos.z - 200){
+				if (p.z < camPos.z && p.z > camPos.z - 150){
 
 					// 计算水平距离
 					var horizontalDist = Math.sqrt(
@@ -461,7 +578,7 @@ var WRGame = function() {
 				p.add(moverGroup.position);
 
 				// 只在石头在玩家前方时检查碰撞
-				if (p.z < camPos.z && p.z > camPos.z - 200) {
+				if (p.z < camPos.z && p.z > camPos.z - 150) {
 					// 计算水平距离
 					var horizontalDist = Math.sqrt(
 						Math.pow(p.x - camPos.x, 2) + 
@@ -473,10 +590,11 @@ var WRGame = function() {
 
 					// 根据石头的缩放比例调整碰撞范围
 					var collisionRange = 250 * rocks[i].scale.x;  // 增大碰撞范围
+					var verticalCollisionRange = rocks[i].myheight * 2;  // 添加垂直碰撞范围
 
 					// 检查是否在石头的碰撞范围内
 					if (horizontalDist < collisionRange && 
-						verticalDist < rocks[i].myheight/2 &&  // 使用石头的实际高度
+						verticalDist < verticalCollisionRange &&  // 使用垂直碰撞范围
 						!rocks[i].collided) {
 						// 游戏结束
 						rocks[i].collided = true;
@@ -530,11 +648,23 @@ var WRGame = function() {
 				trees[i].visible = false;
 			}
 		}
+
+		//kill rocks that are too close at the start
+		for(var i = 0; i < rocks.length; i++) {
+			p = rocks[i].position.clone();
+			p.add(moverGroup.position);
+
+			if (p.z < camPos.z && p.z > camPos.z - WRConfig.FLOOR_DEPTH/2) {
+				rocks[i].collided = true;
+				rocks[i].visible = false;
+			}
+		}
 	}
 
 	function startRun(){
 		playing = true;
 		acceptInput = true;
+		moveSpeed = START_MAX_SPEED * 0.3;  // 设置初始速度为最大速度的一半
 	}
 
 	function onAcceptInput(){
