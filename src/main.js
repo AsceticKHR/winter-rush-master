@@ -34,6 +34,7 @@ var WRMain = function() {
 		saturation: 0.5,
 	};
 
+
 	var hiScore = 0;
 	var score = 0;
 	var distance = 0;

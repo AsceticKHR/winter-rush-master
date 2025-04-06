@@ -5,7 +5,6 @@
 **/
 
 var WRGame = function() {
-
 	var ACCEL = 2000;
 	var MAX_SPEED_ACCEL = 100;
 	var START_MAX_SPEED = 1000;
@@ -495,7 +494,9 @@ var WRGame = function() {
 		setLeftDown: function (b){leftDown = b;},
 		getPlaying: function (){return playing;},
 		getMoverGroup:function (){return moverGroup;},
-		getSpeed: function() {return moveSpeed/maxSpeed;},
+		getSpeed: function() {
+			return moveSpeed/maxSpeed;
+			},
 		resetField:resetField,
 		getAcceptInput:function (){return acceptInput;},
 	};
