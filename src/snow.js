@@ -1,8 +1,4 @@
-/**
-	Winter Rush Snow
-	Handles falling snow, bars, sky
-	by Felix Turner / @felixturner / www.airtight.cc
-**/
+
 
 var WRSnow = function() {
 
@@ -178,8 +174,8 @@ var WRSnow = function() {
 
 		var opac = (WRGame.getSpeed() - 0.5) *2;
 
-		barMaterial.opacity = opac*2/3;
-		skyMaterial.opacity = opac;
+		barMaterial.opacity = opac*0.4;
+		skyMaterial.opacity = opac*0.7;
 
 		for (i = 0; i < BAR_COUNT; i++) {
 			var p = bars[i].position;
