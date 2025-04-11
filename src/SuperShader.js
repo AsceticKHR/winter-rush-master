@@ -1,8 +1,4 @@
- /**
-  Winter Rush Super Shader
-  Combines Vignette & BrightnessContrast & Hue/Saturation
-  by Felix Turner / @felixturner / www.airtight.cc
- */
+
 
 THREE.SuperShader = {
 

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Christmas Tree 3D Scan
+* source:	https://sketchfab.com/3d-models/christmas-tree-3d-scan-df4028bb6eec4cad8a813dfa38e88d8d
+* author:	Laser Design (https://sketchfab.com/Laserdesign)
+
+Model License:
+* license type:	CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+* requirements:	Author must be credited. No commercial use.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Christmas Tree 3D Scan" (https://sketchfab.com/3d-models/christmas-tree-3d-scan-df4028bb6eec4cad8a813dfa38e88d8d) by Laser Design (https://sketchfab.com/Laserdesign) licensed under CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)

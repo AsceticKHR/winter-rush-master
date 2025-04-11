@@ -1,9 +1,3 @@
-/**
-	Winter Rush Main
-	Handles input, sounds, renderer, resize, score display
-	by Felix Turner / @felixturner / www.airtight.cc
-**/
-
 //Global Config
 var WRConfig = {
 	
@@ -12,6 +6,7 @@ var WRConfig = {
 	playMusic:true,
 	hitDetect:true,
 	showDebug:true,
+	debugMode:false,  // 添加调试模式配置
 
 	//const dimensions
 	FLOOR_WIDTH: 3600, 	// size of floor in x direction
@@ -110,7 +105,9 @@ var WRMain = function() {
 
 		if (isMobile){
 			$("#prompt-small").text("Tap to move left or right");
-			$("#info").html("Built with Love by <a href='http://www.airtight.cc'>Airtight</a>.");
+			$("#info").html("");  
+		} else {
+			$("#prompt-small").text("Use arrow keys to move left or right.\nPress space to jump");
 		}
 
 		//INIT CONTROLS
@@ -143,10 +140,20 @@ var WRMain = function() {
 
 		var size = 800;
 		camera = new THREE.PerspectiveCamera( 75, 8 / 6, 1, 10000 );
-		camera.position.z = WRConfig.FLOOR_DEPTH/2 - 300;
+		
+		// 根据调试模式设置相机位置
+		if (WRConfig.debugMode) {
+			camera.position.set(0, 9000, 0);  // 将相机放在更高的位置
+			camera.lookAt(new THREE.Vector3(0, 0, 0));  // 让相机看向地图中心
+		} else {
+			camera.position.z = WRConfig.FLOOR_DEPTH/2 - 300;
+		}
 
 		scene = new THREE.Scene();
-		scene.fog = new THREE.Fog( bkgndColor, WRConfig.FLOOR_DEPTH/2, WRConfig.FLOOR_DEPTH );
+		// 只在非调试模式下添加雾效果
+		if (!WRConfig.debugMode) {
+			scene.fog = new THREE.Fog( bkgndColor, WRConfig.FLOOR_DEPTH/2, WRConfig.FLOOR_DEPTH );
+		}
 
 		renderer = new THREE.WebGLRenderer();
 		renderer.setSize( window.innerWidth, window.innerHeight );
@@ -298,6 +305,17 @@ var WRMain = function() {
 			splashMode = 1;
 			hiScore = score;
 			$('#splash').css('background-image', 'url(res/img/xmas-best.png)');
+			$('#splash').css({
+				'position': 'absolute',
+				'top': '50%',
+				'left': '50%',
+				'transform': 'translate(-50%, -50%)',
+				'width': '600px',
+				'height': '600px',
+				'background-size': 'contain',
+				'background-repeat': 'no-repeat',
+				'background-position': 'center'
+			});
 			$('#prompt-big').text("DISTANCE: " + Math.floor(distance) + "m\nSCORE: " + score);
 			$('#prompt-small').css('display','none');
 			$('#prompt-big').css({
@@ -315,10 +333,20 @@ var WRMain = function() {
 				'padding': '0',
 				'line-height': '2.5'
 			});
-
 		}else{
 			splashMode = 2;
 			$('#splash').css('background-image', 'url(res/img/xmas-wipeout.png)');
+			$('#splash').css({
+				'position': 'absolute',
+				'top': '50%',
+				'left': '50%',
+				'transform': 'translate(-50%, -50%)',
+				'width': '600px',
+				'height': '600px',
+				'background-size': 'contain',
+				'background-repeat': 'no-repeat',
+				'background-position': 'center'
+			});
 			$('#prompt-big').text("DISTANCE: " + Math.floor(distance) + "m\tSCORE: " + score + "\n");
 			$('#prompt-small').text("BEST SCORE: " + hiScore);
 			$('#prompt-small').css('display','block');
@@ -395,7 +423,7 @@ var WRMain = function() {
 
 		// 更新视觉效果
 		var hueAmount = WRGame.getSpeed() < 0.5 ? 0 : (WRGame.getSpeed() - 0.5) * 2;
-		superPass.uniforms.hueAmount.value = hueAmount;
+		superPass.uniforms.hueAmount.value = hueAmount*0.7;
 
 		hueTime += WRGame.getSpeed() * WRGame.getSpeed() * 0.05;
 		superPass.uniforms.hue.value = hueTime % 2 - 1;
