@@ -36,7 +36,7 @@ var WRGame = function() {
 	var rocks = [];  // 添加石头数组
 	var floorGeom, floorMaterial, floor;
 
-	var noiseScale = 5;
+	var noiseScale = 7;
 	var noiseSeed = Math.random() * 100;
 
 	var moverGroup;
@@ -480,23 +480,46 @@ var WRGame = function() {
 		return rock;
 	}
 
+
 	function setFloorHeight(){ 
 
-		//apply noise to floor
+		// //apply noise to floor
 
-		//move mover back by WRConfig.MOVE_STEP
+		// //move mover back by WRConfig.MOVE_STEP
+		// stepCount++;
+		// moverGroup.position.z = - WRConfig.MOVE_STEP;
+
+		// //calculate vert psons base on noise
+		// var i;
+		// var ipos;
+		// var offset = stepCount *WRConfig.MOVE_STEP/WRConfig.FLOOR_DEPTH * FLOOR_RES;
+
+		// for( i = 0; i < FLOOR_RES + 1; i++) {
+		// 	for( var j = 0; j < FLOOR_RES + 1; j++) {
+		// 		ipos = i + offset;
+		// 		floorGeometry.vertices[i * (FLOOR_RES + 1)+ j].z = snoise.noise(ipos/FLOOR_RES * noiseScale, j/FLOOR_RES * noiseScale, noiseSeed ) * FLOOR_THICKNESS;
+		// 	}
+		// }
+		// floorGeometry.verticesNeedUpdate = true;
+
+		// 移动 mover
 		stepCount++;
 		moverGroup.position.z = - WRConfig.MOVE_STEP;
-
-		//calculate vert psons base on noise
-		var i;
-		var ipos;
-		var offset = stepCount *WRConfig.MOVE_STEP/WRConfig.FLOOR_DEPTH * FLOOR_RES;
-
-		for( i = 0; i < FLOOR_RES + 1; i++) {
-			for( var j = 0; j < FLOOR_RES + 1; j++) {
-				ipos = i + offset;
-				floorGeometry.vertices[i * (FLOOR_RES + 1)+ j].z = snoise.noise(ipos/FLOOR_RES * noiseScale, j/FLOOR_RES * noiseScale, noiseSeed ) * FLOOR_THICKNESS;
+	
+		var offset = stepCount * WRConfig.MOVE_STEP / WRConfig.FLOOR_DEPTH * FLOOR_RES;
+	
+		for (var i = 0; i < FLOOR_RES + 1; i++) {
+			for (var j = 0; j < FLOOR_RES + 1; j++) {
+				var ipos = i + offset;
+	
+				// 生成噪声值，控制 X 轴和 Z 轴的变化
+				var noiseX = snoise.noise(ipos / FLOOR_RES * noiseScale, j / FLOOR_RES * noiseScale, noiseSeed);
+				var noiseZ = snoise.noise(j / FLOOR_RES * noiseScale, ipos / FLOOR_RES * noiseScale, noiseSeed);
+	
+				// 结合 X 和 Z 的噪声值，创造拐弯效果
+				floorGeometry.vertices[i * (FLOOR_RES + 1) + j].z = 
+					noiseX * FLOOR_THICKNESS + 
+					noiseZ * FLOOR_THICKNESS * 0.5; // 调整影响程度
 			}
 		}
 		floorGeometry.verticesNeedUpdate = true;

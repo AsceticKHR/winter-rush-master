@@ -1,0 +1,18 @@
+{
+  "name": "winter-rush-master",
+  "version": "1.0.0",
+  "description": "![](http://www.airtightinteractive.com/projects/winter-rush/winter-rush-740.jpg)",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.18.1"
+  }
+}

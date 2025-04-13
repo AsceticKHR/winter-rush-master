@@ -15,6 +15,9 @@ var WRConfig = {
 
 };
 
+// Define socket as a global variable
+var socket;
+
 var WRMain = function() {
 
 	var camera, scene, renderer;
@@ -33,7 +36,7 @@ var WRMain = function() {
 	var hiScore = 0;
 	var score = 0;
 	var distance = 0;
-
+	var total = 0
 	var sndPickup;
 	var sndCollide;
 	var sndMusic;
@@ -66,6 +69,9 @@ var WRMain = function() {
 		'justify-content': 'center',
 		'align-items': 'center'
 	});
+
+	// 在初始化时创建一个用于显示分数的容器
+	$("#container").append('<div id="score-board" style="position: absolute; top: 10px; right: 10px; color: #FFFFFF; text-align: right;"></div>');
 
 	// // 调整初始界面样式
 	// $("#splash").css({
@@ -200,6 +206,47 @@ var WRMain = function() {
 		var img3 = new Image();
 		img3.src = "res/img/xmas-wipeout.png";
 
+
+		// Initialize the WebSocket connection
+		socket = new WebSocket('ws://localhost:8080');
+
+		socket.onopen = function() {
+			// 发送加入游戏的消息
+			socket.send(JSON.stringify({ type: 'join' }));
+		};
+
+		socket.onmessage = function(event) {
+			const data = JSON.parse(event.data);
+
+			switch (data.type) {
+				case 'joined':
+					// Save playerId
+					playerId = data.playerId;
+					console.log('Joined as:', playerId);
+					break;
+
+				case 'updatePlayers':
+					// Update player scores display
+					updatePlayerScores(data.players);
+					console.log('Update score', data.players);
+					break;
+			}
+		};
+
+	}
+
+	// 更新玩家分数的函数
+	function updatePlayerScores(players) {
+		// 在右侧显示玩家的分数
+		const scoreBoard = document.getElementById('score-board');
+		scoreBoard.innerHTML = ''; // 清空现有分数
+		var i = 1
+		for (const [playerId, playerData] of Object.entries(players)) {
+			const scoreItem = document.createElement('div');
+			scoreItem.textContent = `Player ${i}: ${playerData.score}`;
+			scoreBoard.appendChild(scoreItem);
+			i += 1;
+		}
 	}
 
 	function toggleMusic(){
@@ -274,6 +321,11 @@ var WRMain = function() {
 
 		if (score === hiScore + 1 && hiScore !== 0){
 			if (WRConfig.playSound) sndBest.play();
+		}
+
+		// Send score update message to server
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			socket.send(JSON.stringify({ type: 'score', playerId: playerId, value: score }));
 		}
 	}
 
