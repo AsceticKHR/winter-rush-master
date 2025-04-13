@@ -18,6 +18,9 @@ var WRConfig = {
 // Define socket as a global variable
 var socket;
 
+// Define playerId as a global variable
+var playerId;
+
 var WRMain = function() {
 
 	var camera, scene, renderer;
@@ -240,10 +243,15 @@ var WRMain = function() {
 		// 在右侧显示玩家的分数
 		const scoreBoard = document.getElementById('score-board');
 		scoreBoard.innerHTML = ''; // 清空现有分数
-		var i = 1
-		for (const [playerId, playerData] of Object.entries(players)) {
+		var i = 1;
+		for (const [id, playerData] of Object.entries(players)) {
 			const scoreItem = document.createElement('div');
-			scoreItem.textContent = `Player ${i}: ${playerData.score}`;
+			// 如果是当前玩家，添加 '(you)'
+			if (id === playerId) {
+				scoreItem.textContent = `Player ${i}: ${playerData.score} (you)`;
+			} else {
+				scoreItem.textContent = `Player ${i}: ${playerData.score}`;
+			}
 			scoreBoard.appendChild(scoreItem);
 			i += 1;
 		}
@@ -448,7 +456,10 @@ var WRMain = function() {
 		distance = 0;
 		$("#score-text").text(score);
 		$("#distance-text").text("0m");
-
+		// Send score update message to server
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			socket.send(JSON.stringify({ type: 'score', playerId: playerId, value: score }));
+		}
 		if (isFirstGame && WRConfig.playMusic ) sndMusic.play();						
 
 		WRGame.startGame(isFirstGame);
