@@ -4,7 +4,7 @@ var WRGame = function() {
 	var MAX_SPEED_ACCEL = 200;
 	var START_MAX_SPEED = 1000;
 	var FINAL_MAX_SPEED = 2500;
-	var SIDE_ACCEL = 500;
+	var SIDE_ACCEL = 300;
 	var MAX_SIDE_SPEED = 4000;
 	var TREE_COLS = [0x466310,0x355B4B,0x449469];
 	var TREE_COUNT = 6;
@@ -630,7 +630,7 @@ var WRGame = function() {
 
 			//TILT
 			//moverGroup.rotation.z = 0.016 * slideSpeed * 0.003;
-			moverGroup.rotation.z = slideSpeed * 0.000038;
+			moverGroup.rotation.z = slideSpeed * 0.00003;
 
 			// 更新重力
 			updateGravity(delta);
