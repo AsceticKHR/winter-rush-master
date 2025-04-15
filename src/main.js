@@ -211,7 +211,7 @@ var WRMain = function() {
 
 
 		// Initialize the WebSocket connection
-		socket = new WebSocket('ws://localhost:8080');
+		socket = new WebSocket('ws://158.182.110.94:8080');
 
 		socket.onopen = function() {
 			// 发送加入游戏的消息

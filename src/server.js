@@ -1,6 +1,7 @@
 const WebSocket = require('ws');
+const os = require('os');
 
-const wss = new WebSocket.Server({ port: 8080 });
+const wss = new WebSocket.Server({ port: 8080, host: '0.0.0.0'});
 
 let players = {};
 
@@ -47,4 +48,17 @@ function broadcast(data) {
     });
 }
 
-console.log('Server is running on ws://localhost:8080');
+function getLocalExternalIP() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                return iface.address;
+            }
+        }
+    }
+    return 'localhost';
+}
+
+const serverIP = getLocalExternalIP();
+console.log(`Server is running on ws://${serverIP}:8080`);
