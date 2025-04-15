@@ -610,3 +610,9 @@ var WRMain = function() {
 $(document).ready(function() {
 	WRMain.init();
 });
+
+window.addEventListener('beforeunload', function() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'disconnect', playerId: playerId }));
+    }
+});
